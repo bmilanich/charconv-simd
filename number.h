@@ -2,6 +2,7 @@
 #include <charconv>
 #include <immintrin.h>
 #include <emmintrin.h>
+#include <bit>
 
 namespace number {
 
@@ -9,6 +10,7 @@ std::from_chars_result from_chars(const char *first, const char *last,
                                   unsigned &value, int base = 10) {
 
   static const __m128i zero = _mm_set1_epi8('0');
+  static const __m128i nine = _mm_set1_epi8(9);
   static const uint64_t pows[] = {
     1000000000,
     100000000,
@@ -39,10 +41,20 @@ std::from_chars_result from_chars(const char *first, const char *last,
     0xf
   };
 
+
   std::size_t n = last - first;
 
   __m128i digits = _mm_lddqu_si128(reinterpret_cast<const __m128i_u*>(first));
-  digits = _mm_sub_epi8(digits,zero);  
+  digits = _mm_sub_epi8(digits,zero);
+
+  // validate input
+  __mmask16 flags = _mm_cmpgt_epi8_mask(digits,nine);
+  flags = _mm_cmpgt_epi8_mask(_mm_setzero_si128(),digits) | flags;
+  int first_set = std::countr_zero(flags);
+  if( first_set < n ) {
+    return {first + first_set, std::errc::invalid_argument};
+  }
+  
 
   __m128i result = _mm_setzero_si128();
 
