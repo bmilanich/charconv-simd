@@ -59,8 +59,6 @@ std::from_chars_result from_chars(const char *first, const char *last,
 
     __m256i values = _mm256_maskz_mul_epu32(mask, xdigits, factor);
     __m128i sum = _mm256_cvtepi64_epi32(values);
-    sum = _mm_hadd_epi32(sum,sum);
-    sum = _mm_hadd_epi32(sum,sum);
     result = _mm_add_epi32(sum,result);
     if( n > 4) {
       n -= 4;
@@ -69,6 +67,9 @@ std::from_chars_result from_chars(const char *first, const char *last,
       n = 0;
     }
   } while(n>0);
+  result = _mm_hadd_epi32(result,result);
+  result = _mm_hadd_epi32(result,result);
+
   value = _mm_cvtsi128_si32(result);
 	   
     
@@ -119,8 +120,6 @@ std::from_chars_result from_chars1(const char *first, const char *last,
 
     __m256i values = _mm256_maskz_mul_epu32(mask, xdigits, factor);
     __m128i sum = _mm256_cvtepi64_epi32(values);
-    sum = _mm_hadd_epi32(sum,sum);
-    sum = _mm_hadd_epi32(sum,sum);
     result = _mm_add_epi32(sum,result);
     if( n > 4) {
       n -= 4;
@@ -130,10 +129,12 @@ std::from_chars_result from_chars1(const char *first, const char *last,
       n = 0;
     }
   } while(n>0);
+
+  result = _mm_hadd_epi32(result,result);
+  result = _mm_hadd_epi32(result,result);
+
   value = _mm_cvtsi128_si32(result);
 	   
-    
-
   return {last,std::errc()};
   
 }
