@@ -43,6 +43,9 @@ std::from_chars_result from_chars(const char *first, const char *last,
 
 
   std::size_t n = last - first;
+  if(n>10) {
+    return {first,std::errc::result_out_of_range};
+  }
 
   __m128i digits = _mm_lddqu_si128(reinterpret_cast<const __m128i_u*>(first));
   digits = _mm_sub_epi8(digits,zero);
@@ -76,7 +79,7 @@ std::from_chars_result from_chars(const char *first, const char *last,
       n -= 4;
       digits = _mm_srli_si128(digits,4);
     } else {
-      n = 0;
+      break;
     }
   } while(n>0);
   result = _mm_hadd_epi32(result,result);
