@@ -9,6 +9,12 @@
 
 
 int main() {
+
+  unsigned x = 0;
+  char str[] = "718115";
+  number::from_chars(std::begin(str),std::end(str)-1,x);
+
+  
   constexpr std::size_t N = 100000000; // number of integers
 
   std::random_device rd;
@@ -18,6 +24,7 @@ int main() {
 
   std::unique_ptr<char[]> data = std::make_unique_for_overwrite<char[]>(N * 10);
   std::unique_ptr<unsigned[]> values = std::make_unique_for_overwrite<unsigned[]>(N);
+  std::unique_ptr<unsigned[]> results = std::make_unique_for_overwrite<unsigned[]>(N);
   std::unique_ptr<const char *[]> offsets = std::make_unique_for_overwrite<const char *[]>(N+1);
 
   // generate data
@@ -36,9 +43,9 @@ int main() {
   auto start = std::chrono::high_resolution_clock::now();
   for(volatile std::size_t i=0; i!=N; i = i+1) {
     unsigned x;
-    auto [new_ptr,ec] = number::from_chars(offsets[i],offsets[i+1],x);
-    if( x != values[i]) {
-      std::cout << "Conversion error!\n\r";
+    number::from_chars(offsets[i],offsets[i+1],x);
+    if(x != values[i]){
+      std::cout << "Conversion error!" << std::endl;
       return -1;
     }
   }
@@ -46,16 +53,16 @@ int main() {
   std::chrono::duration<double> duration = end - start;
   std::cout << "number::from_chars time: " << duration.count() << std::endl;
 
-  unsigned x = 0;
-  char str[] = "7168115";
-  number::from_chars(std::begin(str),std::end(str)-1,x);
 
   start = std::chrono::high_resolution_clock::now();
   for(volatile std::size_t i=0; i!=N; i = i+1) {
     unsigned x;
-    auto [new_ptr,ec] = std::from_chars(offsets[i],offsets[i+1],x);
-    if( x != values[i]) {
-      std::cout << "Conversion error!\n\r";
+#ifndef __clang__    
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif    
+    std::from_chars(offsets[i],offsets[i+1],x);
+    if(x != values[i]){
+      std::cout << "Conversion error!" << std::endl;
       return -1;
     }
   }

@@ -7,7 +7,7 @@
 namespace number {
 
 std::from_chars_result from_chars(const char *first, const char *last,
-                                  unsigned &value, int base = 10) {
+                                  unsigned &value, int = 10) {
 
   static const __m128i zero = _mm_set1_epi8('0');
   static const __m128i nine = _mm_set1_epi8(9);
@@ -42,8 +42,8 @@ std::from_chars_result from_chars(const char *first, const char *last,
   };
 
 
-  std::size_t n = last - first;
-  if(n>10) {
+  int n = last - first;
+  if(n>10 || n<=0) {
     return {first,std::errc::result_out_of_range};
   }
 
@@ -78,12 +78,8 @@ std::from_chars_result from_chars(const char *first, const char *last,
     __m128i old_result = result;
     result = _mm_add_epi32(sum,result);
     overflow = overflow | _mm_mask_cmp_epu32_mask(0xf,result,old_result,_MM_CMPINT_LT);
-    if( n > 4) {
-      n -= 4;
-      digits = _mm_srli_si128(digits,4);
-    } else {
-      break;
-    }
+    n -= 4;
+    digits = _mm_srli_si128(digits,4);
   } while(n>0);
   __m128i old_result = result;
   result = _mm_hadd_epi32(result,result);
@@ -97,14 +93,12 @@ std::from_chars_result from_chars(const char *first, const char *last,
 
   value = _mm_cvtsi128_si32(result);
 	   
-    
-
   return {last,std::errc()};
   
 }
   // a variant that does not use a power table, performance seems to be the same
 std::from_chars_result from_chars1(const char *first, const char *last,
-                                  unsigned &value, int base = 10) {
+                                  unsigned &value, int = 10) {
 
   static const __m128i zero = _mm_set1_epi8('0');
   static const __m128i reverse_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);

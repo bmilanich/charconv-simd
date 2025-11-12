@@ -1,5 +1,6 @@
+#CXX=g++-14 -Wno-volatile
 CXX=clang++-19
-CXXFLAGS=-g -O3 -std=c++23 -mavx512f -march=native
+CXXFLAGS=-g -Wall -Wextra -O3 -std=c++23 -mavx512f -march=native
 #CXXFLAGS=-g -O0 -std=c++23 -mavx512f -march=native
 
 all : test
