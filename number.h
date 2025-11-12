@@ -60,6 +60,7 @@ std::from_chars_result from_chars(const char *first, const char *last,
   
 
   __m128i result = _mm_setzero_si128();
+  __mmask8 overflow = 0;
 
   do {
 
@@ -74,7 +75,9 @@ std::from_chars_result from_chars(const char *first, const char *last,
 
     __m256i values = _mm256_maskz_mul_epu32(mask, xdigits, factor);
     __m128i sum = _mm256_cvtepi64_epi32(values);
+    __m128i old_result = result;
     result = _mm_add_epi32(sum,result);
+    overflow = overflow | _mm_mask_cmp_epu32_mask(0xf,result,old_result,_MM_CMPINT_LT);
     if( n > 4) {
       n -= 4;
       digits = _mm_srli_si128(digits,4);
@@ -82,8 +85,15 @@ std::from_chars_result from_chars(const char *first, const char *last,
       break;
     }
   } while(n>0);
+  __m128i old_result = result;
   result = _mm_hadd_epi32(result,result);
+  overflow = overflow | _mm_mask_cmp_epu32_mask(0x1,result,old_result,_MM_CMPINT_LT);
+  old_result = result;
   result = _mm_hadd_epi32(result,result);
+  overflow = overflow | _mm_mask_cmp_epu32_mask(0x1,result,old_result,_MM_CMPINT_LT);
+  if(overflow) {
+    return {first,std::errc::result_out_of_range};
+  }
 
   value = _mm_cvtsi128_si32(result);
 	   
@@ -92,11 +102,11 @@ std::from_chars_result from_chars(const char *first, const char *last,
   return {last,std::errc()};
   
 }
+  // a variant that does not use a power table, performance seems to be the same
 std::from_chars_result from_chars1(const char *first, const char *last,
                                   unsigned &value, int base = 10) {
 
   static const __m128i zero = _mm_set1_epi8('0');
-  //static const __m128i reverse_mask = _mm_set_epi8(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
   static const __m128i reverse_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
   static const __m256i init_factor = _mm256_set_epi64x(1000,100,10,1);
   static const __m256i factor_incr = _mm256_set1_epi64x(10000);
