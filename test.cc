@@ -43,6 +43,9 @@ int main() {
   auto start = std::chrono::high_resolution_clock::now();
   for(volatile std::size_t i=0; i!=N; i = i+1) {
     unsigned x;
+#ifndef __clang__    
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif    
     number::from_chars(offsets[i],offsets[i+1],x);
     if(x != values[i]){
       std::cout << "Conversion error!" << std::endl;
@@ -57,9 +60,6 @@ int main() {
   start = std::chrono::high_resolution_clock::now();
   for(volatile std::size_t i=0; i!=N; i = i+1) {
     unsigned x;
-#ifndef __clang__    
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif    
     std::from_chars(offsets[i],offsets[i+1],x);
     if(x != values[i]){
       std::cout << "Conversion error!" << std::endl;
