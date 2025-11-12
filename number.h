@@ -6,11 +6,12 @@
 
 namespace number {
 
-std::from_chars_result from_chars(const char *first, const char *last,
+__attribute__((always_inline)) inline std::from_chars_result from_chars(const char *first, const char *last,
                                   unsigned &value, int = 10) {
 
   static const __m128i zero = _mm_set1_epi8('0');
   static const __m128i nine = _mm_set1_epi8(9);
+  // clang-format off  
   static const uint64_t pows[] = {
     1000000000,
     100000000,
@@ -40,6 +41,7 @@ std::from_chars_result from_chars(const char *first, const char *last,
     0xf,
     0xf
   };
+  // clang-format on
 
 
   int n = last - first;
@@ -104,7 +106,8 @@ std::from_chars_result from_chars1(const char *first, const char *last,
   static const __m128i reverse_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
   static const __m256i init_factor = _mm256_set_epi64x(1000,100,10,1);
   static const __m256i factor_incr = _mm256_set1_epi64x(10000);
-  
+
+  // clang-format off
   static const __mmask8 masks[] = {
     0x0,
     0x1,
@@ -119,7 +122,7 @@ std::from_chars_result from_chars1(const char *first, const char *last,
     0xf,
     0xf
   };
-
+  // clang-format on
   std::size_t n = last - first;
 
   __m128i digits = _mm_lddqu_si128(reinterpret_cast<const __m128i_u*>(first - 16 + n));
